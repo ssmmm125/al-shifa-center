@@ -165,7 +165,8 @@
       var service = document.getElementById('serviceSelect').value;
       var person = document.getElementById('personSelect').value;
       var msg = 'السلام عليكم، حابب أحجز جلسة ' + service + ' مع ' + person + ' في مركز الشفاء.' + (name ? ' اسمي ' + name + '.' : '');
-      window.open('https://wa.me/201091555008?text=' + encodeURIComponent(msg), '_blank', 'noopener');
+      var target = person.indexOf('زياد') !== -1 ? '201091555008' : '201003893620';
+      window.open('https://wa.me/' + target + '?text=' + encodeURIComponent(msg), '_blank', 'noopener');
     });
   }
 
