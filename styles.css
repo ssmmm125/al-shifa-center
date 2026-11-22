@@ -240,6 +240,7 @@ body{
   .booking-form{max-width:none}
 }
 @media (max-width:760px){
+  .back-top{display:none}
   .nav-toggle{display:flex}
   .main-nav{
     position:fixed;inset:0;background:rgba(11,46,28,.98);
