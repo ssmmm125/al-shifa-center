@@ -146,6 +146,16 @@
     });
   }
 
+  /* ---------- package buttons preselect booking service ---------- */
+  document.querySelectorAll('.pkg-book').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var sel = document.getElementById('serviceSelect');
+      if (sel && btn.dataset.package) sel.value = btn.dataset.package;
+      var booking = document.getElementById('booking');
+      if (booking) booking.scrollIntoView({ behavior: 'smooth' });
+    });
+  });
+
   /* ---------- booking form -> WhatsApp ---------- */
   var form = document.getElementById('bookingForm');
   if (form) {
