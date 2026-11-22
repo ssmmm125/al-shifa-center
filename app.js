@@ -153,7 +153,8 @@
       e.preventDefault();
       var name = document.getElementById('nameInput').value.trim();
       var service = document.getElementById('serviceSelect').value;
-      var msg = 'السلام عليكم، حابب أحجز جلسة ' + service + ' في مركز الشفاء.' + (name ? ' اسمي ' + name + '.' : '');
+      var person = document.getElementById('personSelect').value;
+      var msg = 'السلام عليكم، حابب أحجز جلسة ' + service + ' مع ' + person + ' في مركز الشفاء.' + (name ? ' اسمي ' + name + '.' : '');
       window.open('https://wa.me/201091555008?text=' + encodeURIComponent(msg), '_blank', 'noopener');
     });
   }
