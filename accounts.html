@@ -408,7 +408,7 @@ tr:hover td{background:#fbf8ef}
         b.addEventListener('click', function () { monthInput.value = mm; loadEntries(); });
         box.appendChild(b);
       });
-      document.getElementById('archiveCard').style.display = months.length > 1 ? 'block' : 'none';
+      document.getElementById('archiveCard').style.display = months.length ? 'block' : 'none';
     });
   }
 
