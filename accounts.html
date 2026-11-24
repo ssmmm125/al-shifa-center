@@ -148,6 +148,14 @@ tr:hover td{background:#fbf8ef}
 
     <div class="stats" id="statsRow"></div>
 
+    <div class="table-card" id="settleCard">
+      <h2>تقسيم الشهر بالنصف (٥٠٪ لكل شريك)</h2>
+      <table style="min-width:0">
+        <tbody id="settleBody"></tbody>
+      </table>
+      <p class="add-note" id="settleNote"></p>
+    </div>
+
     <div class="add-card">
       <h2>إضافة قيد جديد</h2>
       <form id="addForm" class="add-grid">
@@ -404,7 +412,58 @@ tr:hover td{background:#fbf8ef}
     });
   }
 
+
+  /* ---------- monthly 50/50 settlement ---------- */
+  function renderSettlement(rows) {
+    var inc = { hamdy: 0, ziad: 0, other: 0 }, spent = { hamdy: 0, ziad: 0, other: 0 }, ref = { hamdy: 0, ziad: 0, other: 0 };
+    var missing = 0;
+    rows.forEach(function (r) {
+      if (r.amount === null) { missing++; return; }
+      var a = Number(r.amount), w = (r.person === 'hamdy' || r.person === 'ziad') ? r.person : 'other';
+      if (r.type === 'session') inc[w] += a;
+      else if (r.type === 'purchase' || r.type === 'expense') spent[w] += a;
+      else if (r.type === 'refund') ref[w] += a;
+    });
+    var totalIn = inc.hamdy + inc.ziad + inc.other;
+    var totalOut = spent.hamdy + spent.ziad + spent.other;
+    var totalRef = ref.hamdy + ref.ziad + ref.other;
+    var net = totalIn - totalRef - totalOut;
+    var half = net / 2;
+    function held(p) { return inc[p] - ref[p] - spent[p] + (inc.other - ref.other - spent.other) / 2; }
+    var diff = held('hamdy') - half;
+    var msg;
+    if (Math.abs(diff) < 0.005) msg = 'لا يوجد تحويل مطلوب بين الشريكين.';
+    else if (diff > 0) msg = 'حمدي يسلّم زياد: ' + fmtMoney(diff);
+    else msg = 'زياد يسلّم حمدي: ' + fmtMoney(-diff);
+    var out = [
+      ['جلسات حمدي', fmtMoney(inc.hamdy)],
+      ['جلسات زياد', fmtMoney(inc.ziad)],
+      ['إجمالي الجلسات', fmtMoney(totalIn)],
+      ['مصروفات اشتراها حمدي', fmtMoney(spent.hamdy)],
+      ['مصروفات اشتراها زياد', fmtMoney(spent.ziad)],
+      ['إجمالي المشتريات والمصروفات', fmtMoney(totalOut)],
+      ['المرتجعات / التصحيحات', fmtMoney(totalRef)],
+      ['صافي الشهر', fmtMoney(net)],
+      ['نصيب كل شريك (٥٠٪)', fmtMoney(half)],
+      ['التسوية', msg]
+    ];
+    var body = document.getElementById('settleBody');
+    body.innerHTML = '';
+    out.forEach(function (x) {
+      var tr = document.createElement('tr');
+      tr.innerHTML = '<td></td><td class="amt" style="white-space:normal;text-align:left"></td>';
+      tr.children[0].textContent = x[0];
+      tr.children[1].textContent = x[1];
+      body.appendChild(tr);
+    });
+    document.getElementById('settleNote').textContent =
+      'كل شريك يحتفظ بفلوس جلساته ويدفع المصروفات اللي بيشتريها، وفي آخر الشهر الجلسات والمصروفات بتتقسم ٥٠٪. ' +
+      'القيود المسجلة «مشترك» أو «غير متأكد» بتتقسم بالنصف. التحصيل مش بيتضاف عشان ما يتحسبش مرتين.' +
+      (missing ? ' فيه ' + missing + ' قيد من غير مبلغ مش داخل في الحساب.' : '');
+  }
+
   function render(rows) {
+    renderSettlement(rows);
     /* totals */
     var t = {
       hamdy_sessions: 0, hamdy_sessions_sum: 0,
