@@ -233,6 +233,12 @@ tr:hover td{background:#fbf8ef}
         <tbody id="entriesBody"></tbody>
       </table>
     </div>
+    <div class="table-card" id="trashCard" style="display:none">
+      <h2>المحذوفات (تقدر ترجعها)</h2>
+      <table style="min-width:0">
+        <tbody id="trashBody"></tbody>
+      </table>
+    </div>
     <p class="dash-note">هذه الحسابات خاصة بحمدي وزياد فقط ولا تظهر لأي حد تاني.</p>
   </main>
 </div>
@@ -314,7 +320,7 @@ tr:hover td{background:#fbf8ef}
   /* ---------- restore session + default month ---------- */
   var now = new Date();
   monthInput.value = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
-  document.getElementById('entryDate').value = now.toISOString().slice(0, 10);
+  document.getElementById('entryDate').value = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-' + String(now.getDate()).padStart(2, '0');
 
   sb.auth.getSession().then(function (res) {
     if (res.data && res.data.session) { showDash(); loadEntries(); }
@@ -372,6 +378,7 @@ tr:hover td{background:#fbf8ef}
 
     sb.from('ledger_entries')
       .select('id, entry_date, type, person, amount, description, source, needs_review, session_count')
+      .is('deleted_at', null)
       .gte('entry_date', from).lte('entry_date', to)
       .order('entry_date', { ascending: false })
       .then(function (res) {
@@ -384,13 +391,50 @@ tr:hover td{background:#fbf8ef}
         }
         render(res.data || []);
         loadArchive();
+        loadTrash();
       });
   }
 
 
+  /* ---------- deleted entries (recoverable) ---------- */
+  function loadTrash() {
+    var m = monthInput.value;
+    var toDate = new Date(Number(m.slice(0, 4)), Number(m.slice(5, 7)), 0);
+    var to = m + '-' + String(toDate.getDate()).padStart(2, '0');
+    sb.from('ledger_entries')
+      .select('id, entry_date, type, person, amount, description')
+      .not('deleted_at', 'is', null)
+      .gte('entry_date', m + '-01').lte('entry_date', to)
+      .order('entry_date', { ascending: false })
+      .then(function (res) {
+        var card = document.getElementById('trashCard');
+        var body = document.getElementById('trashBody');
+        body.innerHTML = '';
+        if (res.error || !res.data || !res.data.length) { card.style.display = 'none'; return; }
+        card.style.display = 'block';
+        res.data.forEach(function (r) {
+          var tr = document.createElement('tr');
+          var info = document.createElement('td');
+          info.textContent = (TYPES[r.type] ? TYPES[r.type].label : r.type) + ' · ' + (PERSONS[r.person] || r.person) + ' · ' + fmtMoney(r.amount) + (r.description ? ' · ' + r.description : '');
+          var act = document.createElement('td');
+          var b = document.createElement('button');
+          b.type = 'button'; b.className = 'btn-fix'; b.textContent = 'استرجاع';
+          b.addEventListener('click', function () {
+            sb.from('ledger_entries').update({ deleted_at: null }).eq('id', r.id).then(function (res2) {
+              if (!res2.error) { showToast('اتسترجع القيد ✓'); loadEntries(); }
+              else { showToast('الاسترجاع ما نفعش — جرّب تاني', true); }
+            });
+          });
+          act.appendChild(b);
+          tr.appendChild(info); tr.appendChild(act);
+          body.appendChild(tr);
+        });
+      });
+  }
+
   /* ---------- month archive ---------- */
   function loadArchive() {
-    sb.from('ledger_entries').select('entry_date').then(function (res) {
+    sb.from('ledger_entries').select('entry_date').is('deleted_at', null).then(function (res) {
       if (res.error || !res.data) return;
       var seen = {};
       res.data.forEach(function (r) { seen[String(r.entry_date).slice(0, 7)] = true; });
@@ -565,7 +609,7 @@ tr:hover td{background:#fbf8ef}
           var n = Number(v);
           if (isNaN(n) || n < 0) { alert('مبلغ غير صحيح'); return; }
           sb.from('ledger_entries').update({ amount: n, needs_review: false }).eq('id', r.id)
-            .then(function (res) { if (!res.error) loadEntries(); });
+            .then(function (res) { if (!res.error) { loadEntries(); } else { showToast('ما اتحفظش المبلغ — جرّب تاني', true); } });
         });
         dSt.appendChild(fix);
       } else {
@@ -577,9 +621,12 @@ tr:hover td{background:#fbf8ef}
       var del = document.createElement('button');
       del.className = 'btn-del'; del.title = 'حذف'; del.textContent = '✕';
       del.addEventListener('click', function () {
-        if (!confirm('متأكد إنك عايز تمسح القيد ده؟')) return;
-        sb.from('ledger_entries').delete().eq('id', r.id)
-          .then(function (res) { if (!res.error) loadEntries(); });
+        if (!confirm('هتنقل القيد ده للمحذوفات؟ تقدر ترجعه بعد كده.')) return;
+        sb.from('ledger_entries').update({ deleted_at: new Date().toISOString() }).eq('id', r.id)
+          .then(function (res) {
+            if (!res.error) { showToast('اتنقل للمحذوفات ✓'); loadEntries(); }
+            else { showToast('القيد ما اتمسحش — جرّب تاني', true); }
+          });
       });
       dDel.appendChild(del); tr.appendChild(dDel);
 
