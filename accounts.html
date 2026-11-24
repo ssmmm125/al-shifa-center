@@ -434,7 +434,7 @@ tr:hover td{background:#fbf8ef}
 
   /* ---------- month archive ---------- */
   function loadArchive() {
-    sb.from('ledger_entries').select('entry_date').is('deleted_at', null).then(function (res) {
+    sb.from('ledger_entries').select('entry_date').then(function (res) {
       if (res.error || !res.data) return;
       var seen = {};
       res.data.forEach(function (r) { seen[String(r.entry_date).slice(0, 7)] = true; });
