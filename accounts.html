@@ -141,6 +141,11 @@ tr:hover td{background:#fbf8ef}
   </header>
 
   <main class="container">
+    <div class="table-card" id="archiveCard" style="display:none">
+      <h2>الشهور المحفوظة</h2>
+      <div id="archiveList" style="display:flex;flex-wrap:wrap;gap:8px"></div>
+    </div>
+
     <div class="stats" id="statsRow"></div>
 
     <div class="add-card">
@@ -370,7 +375,33 @@ tr:hover td{background:#fbf8ef}
           return;
         }
         render(res.data || []);
+        loadArchive();
       });
+  }
+
+
+  /* ---------- month archive ---------- */
+  function loadArchive() {
+    sb.from('ledger_entries').select('entry_date').then(function (res) {
+      if (res.error || !res.data) return;
+      var seen = {};
+      res.data.forEach(function (r) { seen[String(r.entry_date).slice(0, 7)] = true; });
+      var cur = new Date();
+      seen[cur.getFullYear() + '-' + String(cur.getMonth() + 1).padStart(2, '0')] = true;
+      var months = Object.keys(seen).sort().reverse();
+      var box = document.getElementById('archiveList');
+      box.innerHTML = '';
+      months.forEach(function (mm) {
+        var b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'btn';
+        b.style.cssText = 'background:#fff;color:#1f4d3a;border:2px solid #c9a227;padding:7px 16px;font-size:.9rem';
+        b.textContent = new Date(mm + '-01T00:00:00').toLocaleDateString('ar-EG', { month: 'long', year: 'numeric' });
+        b.addEventListener('click', function () { monthInput.value = mm; loadEntries(); });
+        box.appendChild(b);
+      });
+      document.getElementById('archiveCard').style.display = months.length > 1 ? 'block' : 'none';
+    });
   }
 
   function render(rows) {
