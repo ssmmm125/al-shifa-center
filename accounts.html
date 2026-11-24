@@ -173,6 +173,10 @@ tr:hover td{background:#fbf8ef}
           <label for="entryAmount">المبلغ (ج.م)</label>
           <input type="number" id="entryAmount" min="0" step="0.01" inputmode="decimal" placeholder="اتركه فاضي لو مش معروف">
         </div>
+        <div id="countWrap">
+          <label for="entryCount">عدد الجلسات</label>
+          <input type="number" id="entryCount" min="1" step="1" value="1" inputmode="numeric">
+        </div>
         <div class="wide">
           <label for="entryDesc">البيان</label>
           <input type="text" id="entryDesc" maxlength="200" placeholder="مثال: جلسة حجامة / شراء أكواب / إيجار">
@@ -303,6 +307,13 @@ tr:hover td{background:#fbf8ef}
     if (res.data && res.data.session) { showDash(); loadEntries(); }
   });
 
+  /* عدد الجلسات يظهر فقط لنوع «جلسة» */
+  function syncCountField() {
+    document.getElementById('countWrap').style.display = document.getElementById('entryType').value === 'session' ? '' : 'none';
+  }
+  document.getElementById('entryType').addEventListener('change', syncCountField);
+  syncCountField();
+
   /* ---------- add entry ---------- */
   document.getElementById('addForm').addEventListener('submit', function (e) {
     e.preventDefault();
@@ -313,6 +324,7 @@ tr:hover td{background:#fbf8ef}
       type: document.getElementById('entryType').value,
       person: document.getElementById('entryPerson').value,
       amount: amount,
+      session_count: document.getElementById('entryType').value === 'session' ? Math.max(1, Math.floor(Number(document.getElementById('entryCount').value) || 1)) : 1,
       description: document.getElementById('entryDesc').value.trim() || null,
       source: 'manual',
       needs_review: amount === null || document.getElementById('entryPerson').value === 'unknown' || document.getElementById('entryReview').checked
@@ -325,6 +337,7 @@ tr:hover td{background:#fbf8ef}
         showToast('اتحفظ القيد بنجاح ✓');
         document.getElementById('entryAmount').value = '';
         document.getElementById('entryDesc').value = '';
+        document.getElementById('entryCount').value = '1';
         document.getElementById('entryReview').checked = false;
         loadEntries();
       } else {
@@ -345,7 +358,7 @@ tr:hover td{background:#fbf8ef}
     var to = m + '-' + String(toDate.getDate()).padStart(2, '0');
 
     sb.from('ledger_entries')
-      .select('id, entry_date, type, person, amount, description, source, needs_review')
+      .select('id, entry_date, type, person, amount, description, source, needs_review, session_count')
       .gte('entry_date', from).lte('entry_date', to)
       .order('entry_date', { ascending: false })
       .then(function (res) {
@@ -371,8 +384,8 @@ tr:hover td{background:#fbf8ef}
     rows.forEach(function (r) {
       var amt = r.amount === null ? 0 : Number(r.amount);
       if (r.needs_review) t.review++;
-      if (r.type === 'session' && r.person === 'hamdy') { t.hamdy_sessions++; t.hamdy_sessions_sum += amt; }
-      if (r.type === 'session' && r.person === 'ziad') { t.ziad_sessions++; t.ziad_sessions_sum += amt; }
+      if (r.type === 'session' && r.person === 'hamdy') { t.hamdy_sessions += (r.session_count || 1); t.hamdy_sessions_sum += amt; }
+      if (r.type === 'session' && r.person === 'ziad') { t.ziad_sessions += (r.session_count || 1); t.ziad_sessions_sum += amt; }
       if (r.type === 'collection') t.collections += amt;
       if (r.type === 'refund') t.refunds += amt;
       if (r.type === 'purchase' || r.type === 'expense') {
@@ -436,7 +449,7 @@ tr:hover td{background:#fbf8ef}
       var dType = document.createElement('td');
       var b = document.createElement('span');
       b.className = 'badge ' + (TYPES[r.type] ? TYPES[r.type].cls : '');
-      b.textContent = TYPES[r.type] ? TYPES[r.type].label : r.type;
+      b.textContent = (TYPES[r.type] ? TYPES[r.type].label : r.type) + (r.type === 'session' && (r.session_count || 1) > 1 ? ' ×' + r.session_count : '');
       dType.appendChild(b); tr.appendChild(dType);
 
       tr.appendChild(td(PERSONS[r.person] || r.person));
