@@ -3,6 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="logo.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
 <meta name="robots" content="noindex, nofollow">
 <title>حسابات المركز — مركز الشفاء للاستشفاء</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -134,6 +138,7 @@ tr:hover td{background:#fbf8ef}
           <label for="monthInput">الشهر</label>
           <input type="month" id="monthInput">
         </div>
+        <button class="btn btn-ghost" id="pushBtn">تفعيل الإشعارات 🔔</button>
         <button class="btn btn-ghost" id="refreshBtn">تحديث</button>
         <button class="btn btn-ghost" id="logoutBtn">خروج</button>
       </div>
@@ -635,5 +640,7 @@ tr:hover td{background:#fbf8ef}
   }
 })();
 </script>
+<script src="push.js"></script>
 </body>
 </html>
+
