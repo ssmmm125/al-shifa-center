@@ -1,0 +1,12 @@
+{
+  "name": "حسابات مركز الشفاء",
+  "short_name": "الحسابات",
+  "start_url": "accounts.html",
+  "scope": "./",
+  "display": "standalone",
+  "dir": "rtl",
+  "lang": "ar",
+  "background_color": "#ffffff",
+  "theme_color": "#0f766e",
+  "icons": [{ "src": "logo.png", "sizes": "any", "type": "image/png", "purpose": "any" }]
+}
